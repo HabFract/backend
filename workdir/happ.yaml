@@ -1,0 +1,17 @@
+---
+manifest_version: "1"
+name: habit_tracking
+description: ~
+roles:
+
+  - id: habit_tree_engine
+    provisioning:
+      strategy: create
+      deferred: false
+    dna:
+      bundled: "../dna/workdir/habit_tree_engine.dna"
+      properties: ~
+      uuid: ~
+      version: ~
+      clone_limit: 0
+
