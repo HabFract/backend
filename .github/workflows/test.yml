@@ -34,8 +34,3 @@ jobs:
         run: |
             cd $GITHUB_WORKSPACE
             nix-shell . --run "npm test"
-
-        - name: build & package UI
-        run: |
-            cd $GITHUB_WORKSPACE
-            nix-shell . --run "npm run package"

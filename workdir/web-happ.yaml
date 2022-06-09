@@ -1,7 +1,5 @@
 ---
 manifest_version: "1"
 name: habit_tracking
-ui:
-  bundled: "../ui/dist.zip"
 happ_manifest:
   bundled: "./habit_tracking.happ"
