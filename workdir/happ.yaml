@@ -3,13 +3,12 @@ manifest_version: "1"
 name: habit_tracking
 description: ~
 roles:
-
-  - id: habit_tree_engine
+  - id: atomic_habits
     provisioning:
       strategy: create
       deferred: false
     dna:
-      bundled: "../dna/workdir/habit_tree_engine.dna"
+      bundled: "habit_tracking.dna"
       properties: ~
       uuid: ~
       version: ~
