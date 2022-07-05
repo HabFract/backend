@@ -1,9 +1,9 @@
 ---
 manifest_version: "1"
-name: habit_tree_engine
+name: habit_tracking
 uuid: 00000000-0000-0000-0000-000000000000
 properties: ~
 zomes: 
   - name: atomic_habits
-    bundled: ../../target/wasm32-unknown-unknown/release/atomic_habits.wasm
+    bundled: ../target/wasm32-unknown-unknown/release/atomic_habits.wasm
 

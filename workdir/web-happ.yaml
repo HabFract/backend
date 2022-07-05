@@ -1,5 +1,0 @@
----
-manifest_version: "1"
-name: habit_tracking
-happ_manifest:
-  bundled: "./habit_tracking.happ"

@@ -10,5 +10,5 @@ name = "atomic_habits"
 [dependencies]
 serde = "1"
 derive_more = "0"
-
-hdk = {version="0.0.130", features = ["encoding"]}
+tracing = "0.1"
+hdk = {version="0.0.136", features = ["encoding"]}
