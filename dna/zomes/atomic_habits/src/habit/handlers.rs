@@ -1,6 +1,16 @@
 use super::Habit;
 use hdk::prelude::holo_hash::*;
 use hdk::prelude::*;
+enum HabitLinkType {
+    PathToHabit = 0,
+    // AgentToHabit = 1,
+}
+
+impl From<HabitLinkType> for LinkType {
+    fn from(hdk_link_type: HabitLinkType) -> Self {
+        Self(hdk_link_type as u8)
+    }
+}
 
 #[hdk_extern]
 pub fn get_habit(entry_hash: EntryHashB64) -> ExternResult<Option<Habit>> {
@@ -16,6 +26,26 @@ pub fn get_habit(entry_hash: EntryHashB64) -> ExternResult<Option<Habit>> {
             Ok(Some(habit))
         }
     }
+}
+
+#[hdk_extern]
+pub fn get_habits(_: ()) -> ExternResult<Vec<Element>> {
+    let path = habits_path();
+
+    let children = path.children()?;
+    // debug!("children: {:?}", children);
+
+    let get_input: Vec<GetInput> = children
+        .into_iter()
+        .map(|link| GetInput::new(HeaderHash::from(link.target).into(), GetOptions::default()))
+        .collect();
+
+    let maybe_elements = HDK.with(|hdk| hdk.borrow().get(get_input))?;
+
+    let elements: Vec<Element> = maybe_elements.into_iter().filter_map(|el| el).collect();
+
+    debug!("elements: {:?}", elements);
+    Ok(elements)
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -34,6 +64,24 @@ pub struct NewHabitOutput {
 pub fn create_habit(habit: Habit) -> ExternResult<GraphQLCreatePayload> {
     let header_hash = create_entry(&habit.clone())?;
     let entry_hash = hash_entry(&habit)?;
+
+    // let path = prefix_path(habit.name.clone());
+    let path = habits_path();
+    path.ensure()?;
+    // let agent_address = agent_info()?.agent_initial_pubkey.clone();
+
+    create_link(
+        path.path_entry_hash()?,
+        header_hash.clone(),
+        HabitLinkType::PathToHabit,
+        (),
+    )?;
+    // create_link(
+    //     agent_address,
+    //     entry_hash.clone(),
+    //     HabitLinkType::AgentToHabit,
+    //     ()
+    // )?;
 
     let output = GraphQLCreatePayload {
         payload: NewHabitOutput {
@@ -72,4 +120,18 @@ pub fn update_habit(input: UpdateHabitInput) -> ExternResult<NewHabitOutput> {
 #[hdk_extern]
 pub fn delete_habit(header_hash: HeaderHashB64) -> ExternResult<HeaderHash> {
     delete_entry(HeaderHash::from(header_hash))
+}
+
+/** Private helpers */
+
+// fn prefix_path(name: String) -> Path {
+//     // conver to lowercase for path for ease of search
+//     let lower_name = name.to_lowercase();
+//     let (prefix, _) = lower_name.as_str().split_at(3);
+
+//     Path::from(format!("all_habits.{}", prefix))
+// }
+
+fn habits_path() -> Path {
+    Path::from(format!("habits"))
 }
