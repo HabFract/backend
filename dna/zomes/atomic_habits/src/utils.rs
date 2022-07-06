@@ -1,11 +1,11 @@
 use hdk::prelude::*;
 
-pub fn try_get_and_convert<T: TryFrom<SerializedBytes>>(entry_hash: EntryHash) -> ExternResult<T> {
-    match get(entry_hash.clone(), GetOptions::default())? {
-        Some(element) => try_from_element(element),
-        None => Err(err("Entry not found")),
-    }
-}
+// pub fn try_get_and_convert<T: TryFrom<SerializedBytes>>(entry_hash: EntryHash) -> ExternResult<T> {
+//     match get(entry_hash.clone(), GetOptions::default())? {
+//         Some(element) => try_from_element(element),
+//         None => Err(err("Entry not found")),
+//     }
+// }
 
 pub fn try_from_element<T: TryFrom<SerializedBytes>>(element: Element) -> ExternResult<T> {
     match element.entry() {

@@ -31,36 +31,19 @@ pub fn get_habit(entry_hash: EntryHashB64) -> ExternResult<Option<Habit>> {
 }
 
 #[hdk_extern]
-pub fn get_habits(_: ()) -> ExternResult<Vec<Habit>> {
+pub fn get_all_habits(_: ()) -> ExternResult<Connection> {
     let path = habits_path();
+    let children = get_links(path.path_entry_hash()?, None)?;
 
-    let children = path.children()?;
-    // debug!("children: {:?}", children);
-
-    let get_input: Vec<GetInput> = children
+    let habits: Vec<Habit> = children
         .into_iter()
-        .map(|link| GetInput::new(HeaderHash::from(link.target).into(), GetOptions::default()))
+        .map(|link| get_habit_from_link_target(link.target.into()))
+        .collect::<ExternResult<Vec<Habit>>>()?
+        .into_iter()
         .collect();
+    let habit_connection = Connection::new(habits);
 
-    let maybe_elements = HDK.with(|hdk| hdk.borrow().get(get_input))?;
-
-    let elements: Vec<Element> = maybe_elements.into_iter().filter_map(|el| el).collect()?;
-    let habits = elements.into_iter().map(get_habit_from_element).collect()?;
-
-    debug!("habits: {:?}", habits);
-    Ok(habits)
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct GraphQLCreatePayload {
-    payload: NewHabitOutput,
-}
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct NewHabitOutput {
-    header_hash: HeaderHashB64,
-    entry_hash: EntryHashB64,
+    Ok(habit_connection)
 }
 
 #[hdk_extern]
@@ -75,7 +58,7 @@ pub fn create_habit(habit: Habit) -> ExternResult<GraphQLCreatePayload> {
 
     create_link(
         path.path_entry_hash()?,
-        header_hash.clone(),
+        entry_hash.clone(),
         HabitLinkType::PathToHabit,
         (),
     )?;
@@ -94,13 +77,6 @@ pub fn create_habit(habit: Habit) -> ExternResult<GraphQLCreatePayload> {
     };
 
     Ok(output)
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct UpdateHabitInput {
-    original_header_hash: HeaderHashB64,
-    updated_habit: Habit,
 }
 
 #[hdk_extern]
@@ -136,12 +112,82 @@ pub fn delete_habit(header_hash: HeaderHashB64) -> ExternResult<HeaderHash> {
 // }
 
 fn habits_path() -> Path {
-    Path::from(format!("habits"))
+    Path::from(format!("all_habits"))
 }
 
 fn get_habit_from_element(element: Element) -> ExternResult<Habit> {
     let habit: Habit = utils::try_from_element(element)?;
-
-    debug!("habit: {:?}", habit);
     Ok(habit)
+}
+
+fn get_habit_from_link_target(target_hash: EntryHash) -> ExternResult<Habit> {
+    // let links = get_links(target_hash, None)?;
+    // debug!("links: {:?}", links);
+
+    // let get_input = links
+    //     .into_iter()
+    //     .map(|link| GetInput::new(link.target.into(), GetOptions::default()))
+    //     .collect();
+
+    let get_input = GetInput::new(target_hash.into(), GetOptions::default());
+
+    let get_output = HDK.with(|h| h.borrow().get(vec![get_input]))?;
+
+    let habit = get_output
+        .into_iter()
+        .filter_map(|maybe_option| maybe_option)
+        .map(get_habit_from_element)
+        .next()
+        .unwrap();
+    return habit;
+}
+
+/** GraphQL Structs */
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct GraphQLCreatePayload {
+    payload: NewHabitOutput,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct NewHabitOutput {
+    header_hash: HeaderHashB64,
+    entry_hash: EntryHashB64,
+}
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateHabitInput {
+    original_header_hash: HeaderHashB64,
+    updated_habit: Habit,
+}
+
+#[derive(Debug, Serialize, Deserialize, SerializedBytes, Clone)]
+pub struct Connection {
+    edges: Vec<Edge>,
+    page_info: String,
+}
+
+impl Connection {
+    pub fn new(habits: Vec<Habit>) -> Connection {
+        return Connection {
+            edges: habits.into_iter().map(|h| Edge::new(h)).collect(),
+            page_info: String::from("NOT IMPLEMENTED"),
+        };
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, SerializedBytes, Clone)]
+pub struct Edge {
+    cursor: String,
+    node: Habit,
+}
+
+impl Edge {
+    pub fn new(habit: Habit) -> Edge {
+        return Edge {
+            cursor: String::from("NOT IMPLEMENTED"),
+            node: habit,
+        };
+    }
 }
