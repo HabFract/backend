@@ -1,6 +1,7 @@
 use hdk::prelude::*;
 
 mod habit;
+mod utils;
 
 use habit::Habit;
 

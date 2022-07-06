@@ -1,6 +1,8 @@
 use super::Habit;
+use crate::utils;
 use hdk::prelude::holo_hash::*;
 use hdk::prelude::*;
+
 enum HabitLinkType {
     PathToHabit = 0,
     // AgentToHabit = 1,
@@ -29,7 +31,7 @@ pub fn get_habit(entry_hash: EntryHashB64) -> ExternResult<Option<Habit>> {
 }
 
 #[hdk_extern]
-pub fn get_habits(_: ()) -> ExternResult<Vec<Element>> {
+pub fn get_habits(_: ()) -> ExternResult<Vec<Habit>> {
     let path = habits_path();
 
     let children = path.children()?;
@@ -42,10 +44,11 @@ pub fn get_habits(_: ()) -> ExternResult<Vec<Element>> {
 
     let maybe_elements = HDK.with(|hdk| hdk.borrow().get(get_input))?;
 
-    let elements: Vec<Element> = maybe_elements.into_iter().filter_map(|el| el).collect();
+    let elements: Vec<Element> = maybe_elements.into_iter().filter_map(|el| el).collect()?;
+    let habits = elements.into_iter().map(get_habit_from_element).collect()?;
 
-    debug!("elements: {:?}", elements);
-    Ok(elements)
+    debug!("habits: {:?}", habits);
+    Ok(habits)
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -134,4 +137,11 @@ pub fn delete_habit(header_hash: HeaderHashB64) -> ExternResult<HeaderHash> {
 
 fn habits_path() -> Path {
     Path::from(format!("habits"))
+}
+
+fn get_habit_from_element(element: Element) -> ExternResult<Habit> {
+    let habit: Habit = utils::try_from_element(element)?;
+
+    debug!("habit: {:?}", habit);
+    Ok(habit)
 }
