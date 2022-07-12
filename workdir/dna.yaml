@@ -6,4 +6,7 @@ properties: ~
 zomes: 
   - name: atomic_habits
     bundled: ../target/wasm32-unknown-unknown/release/atomic_habits.wasm
+  - name: profiles
+    bundled: ../target/wasm32-unknown-unknown/release/profiles.wasm
+
 

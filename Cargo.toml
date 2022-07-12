@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
     "dna/zomes/atomic_habits",
+    "dna/zomes/profiles",
 ]
 
 [profile.dev]
