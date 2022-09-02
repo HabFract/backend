@@ -1,0 +1,19 @@
+[package]
+authors = ["n.stebbings@gmail.com"]
+name = "hc_zome_atomic_habits_integrity"
+description = "Atomic habits integrity zome"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+name = "hc_zome_atomic_habits_integrity"
+
+[dependencies]
+derive_more = "0"
+serde = "1"
+chrono = { version = "=0.4.22", default-features = false, features = ["clock", "std", "oldtime", "serde"], optional = true }
+
+hc_zome_atomic_habits_integrity_types = {path = "../../types/integrity_types"}
+hdi = "0.0.19"

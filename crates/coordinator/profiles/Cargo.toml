@@ -1,0 +1,16 @@
+[package]
+edition = "2021"
+name = "hc_zome_profiles_coordinator"
+version = "0.0.1"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+name = "hc_zome_profiles_coordinator"
+
+[dependencies]
+serde = "1"
+derive_more = "0"
+chrono = { version = "=0.4.22", default-features = false, features = ["clock", "std", "oldtime", "serde"], optional = true }
+
+hc_zome_profiles_integrity = { path = "../../integrity/profiles" }
+hc_zome_profiles_coordinator = {git = "https://github.com/holochain-open-dev/profiles", rev = "for-hdk-v0.0.147", package = "hc_zome_profiles_coordinator"}

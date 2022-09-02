@@ -1,9 +1,13 @@
 [workspace]
 resolver = "2"
 members = [
-    "dna/zomes/atomic_habits",
-    "dna/zomes/profiles",
+    "crates/coordinator/profiles",
+    "crates/coordinator/atomic_habits",
+    "crates/integrity/atomic_habits",
+    "crates/integrity/profiles",
+    "crates/types/*"
 ]
+exclude = [ "crates/types"]
 
 [profile.dev]
 opt-level = "z"

@@ -1,0 +1,21 @@
+[package]
+authors = ["n.stebbings@gmail.com"]
+name = "hc_zome_atomic_habits_coordinator"
+description = "Atomic habits coordinator zome"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+name = "hc_zome_atomic_habits_coordinator"
+
+[dependencies]
+derive_more = "0"
+serde = "1"
+chrono = { version = "=0.4.22", default-features = false, features = ["clock", "std", "oldtime", "serde"], optional = true }
+
+hdk = "0.0.147"
+hc_zome_atomic_habits_coordinator_types = {path = "../../types/coordinator_types"}
+hc_zome_atomic_habits_integrity_types = {path = "../../types/integrity_types"}
+hc_zome_atomic_habits_integrity = {path = "../../integrity/atomic_habits"}

@@ -227,7 +227,7 @@ pub struct Edge {
     node: BurnerNode,
 }
 
-impl Edge {
+impl<T> Edge {
     pub fn new(burner: BurnerNode) -> Edge {
         return Edge {
             cursor: String::from("NOT IMPLEMENTED"),
