@@ -16,7 +16,7 @@ impl<T> Connection<T> {
             edges: items
                 .into_iter()
                 .enumerate()
-                .map(|(_, i)| Edge::new(Node { node: i }))
+                .map(|(_, i)| Edge::new(Node(i)))
                 .collect(),
             page_info: String::from("NOT IMPLEMENTED"),
         };
@@ -39,9 +39,7 @@ impl<T> Edge<T> {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Node<T> {
-    pub node: T,
-}
+pub struct Node<T>(pub T);
 
 //legacy
 #[derive(Serialize, Deserialize, Debug)]

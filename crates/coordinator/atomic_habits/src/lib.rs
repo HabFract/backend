@@ -7,7 +7,7 @@ use hc_zome_atomic_habits_integrity_types::*;
 
 /// Creates a burner for the agent executing this call.
 #[hdk_extern]
-pub fn create_burner(burner: Burner) -> ExternResult<Edge<Node<Record>>> {
+pub fn create_burner(burner: Burner) -> ExternResult<Node<Record>> {
     handlers::create_burner(burner)
 }
 
