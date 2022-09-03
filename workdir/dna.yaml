@@ -1,12 +1,23 @@
 ---
 manifest_version: "1"
 name: habit_tracking
-uuid: 00000000-0000-0000-0000-000000000000
-properties: ~
-zomes: 
-  - name: atomic_habits
-    bundled: ../target/wasm32-unknown-unknown/release/atomic_habits.wasm
-  - name: profiles
-    bundled: ../target/wasm32-unknown-unknown/release/profiles.wasm
 
-
+integrity:
+  network_seed: 00000000-0000-0000-0000-000000000000
+  properties: ~
+  origin_time: 2022-07-25T13:55:49.200Z
+  zomes:
+    - name: atomic_habits_integrity
+      bundled: ../target/wasm32-unknown-unknown/release/hc_zome_atomic_habits_integrity.wasm
+    - name: profiles_integrity
+      bundled: ../target/wasm32-unknown-unknown/release/hc_zome_profiles_integrity.wasm
+coordinator:
+  zomes:
+    - name: atomic_habits
+      bundled: ../target/wasm32-unknown-unknown/release/hc_zome_atomic_habits_coordinator.wasm
+      dependencies:
+        - name: atomic_habits_integrity
+    - name: profiles
+      bundled: ../target/wasm32-unknown-unknown/release/hc_zome_profiles_coordinator.wasm
+      dependencies:
+        - name: profiles_integrity
