@@ -9,7 +9,7 @@
     "network": "npm run build:happ && concurrently-repeat \"npm run start:agent\"",
     "start:agent": "cross-env HC_PORT=$(port) concurrently -k \"npm run start:happ\"",
     "test": "npm run build:happ && npm t -w tests",
-    "start:happ": "concurrently \"RUST_LOG=warn hc s generate ./workdir/habit_tracking.happ --run=$HC_PORT -a habit_tracking network mdns\" \"npm run playground\"",
+    "start:happ": "RUST_LOG=warn echo \"pass\" | hc s --piped generate ./workdir/habit_tracking.happ --run=8888 -a habit_tracking network mdns",
     "package": "npm run build:happ && hc web-app pack workdir",
     "build:happ": "npm run build:dnas && hc app pack ./workdir",
     "build:dnas": "npm run build:zomes && hc dna pack ./workdir",

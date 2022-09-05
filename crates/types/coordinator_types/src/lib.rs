@@ -62,6 +62,6 @@ pub struct NewBurnerOutput {
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateBurnerInput {
-    original_header_hash: String,
-    updated_burner: Burner,
+    pub original_header_hash: String,
+    pub updated_burner: Burner,
 }
