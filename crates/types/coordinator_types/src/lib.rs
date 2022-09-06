@@ -1,4 +1,4 @@
-use hdk::prelude::*;
+use hdk::prelude::{holo_hash::ActionHash, *};
 use std::collections::BTreeMap;
 
 use hc_zome_atomic_habits_integrity_types::*;
@@ -62,6 +62,6 @@ pub struct NewBurnerOutput {
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateBurnerInput {
-    pub original_header_hash: String,
+    pub original_action_hash: ActionHash,
     pub updated_burner: Burner,
 }

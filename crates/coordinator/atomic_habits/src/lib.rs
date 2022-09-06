@@ -1,13 +1,13 @@
-use hdk::prelude::*;
+use hdk::prelude::{holo_hash::ActionHash, *};
 
 mod handlers;
 
-use hc_zome_atomic_habits_coordinator_types::{Node, UpdateBurnerInput};
+use hc_zome_atomic_habits_coordinator_types::UpdateBurnerInput;
 use hc_zome_atomic_habits_integrity_types::*;
 
 /// Creates a burner for the agent executing this call.
 #[hdk_extern]
-pub fn create_burner(burner: Burner) -> ExternResult<Node<Record>> {
+pub fn create_burner(burner: Burner) -> ExternResult<Record> {
     handlers::create_burner(burner)
 }
 
@@ -26,7 +26,7 @@ pub fn delete_burner(header_hash: String) -> ExternResult<Option<String>> {
 
 /// Returns a specific burner, if it exists.
 #[hdk_extern]
-pub fn get_burner(entry_hash: String) -> ExternResult<Option<Record>> {
+pub fn get_burner(entry_hash: ActionHash) -> ExternResult<Option<Record>> {
     let burner = handlers::get_burner(entry_hash)?;
     Ok(burner) // Ok boomer...
 }

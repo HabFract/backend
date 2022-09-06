@@ -12,3 +12,5 @@ node_modules/
 nix/sources.nix
 nix/sources.json
 Cargo.lock
+.vscode/
+scratch.rs

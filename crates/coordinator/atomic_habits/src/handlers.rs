@@ -1,9 +1,12 @@
-use hc_zome_atomic_habits_coordinator_types::{Node, UpdateBurnerInput};
+use hc_zome_atomic_habits_coordinator_types::UpdateBurnerInput;
 use hc_zome_atomic_habits_integrity::*;
 use hc_zome_atomic_habits_integrity_types::*;
-use hdk::{hash_path::path::TypedPath, prelude::*};
+use hdk::{
+    hash_path::path::TypedPath,
+    prelude::{holo_hash::ActionHash, *},
+};
 
-pub fn create_burner(burner: Burner) -> ExternResult<Node<Record>> {
+pub fn create_burner(burner: Burner) -> ExternResult<Record> {
     let agent_info = agent_info()?;
 
     let action_hash = create_entry(EntryTypes::Burner(burner.clone()))?;
@@ -30,15 +33,14 @@ pub fn create_burner(burner: Burner) -> ExternResult<Node<Record>> {
     let record = get(action_hash, GetOptions::default())?
         .ok_or(wasm_error!(WasmErrorInner::Guest("Unreachable".into())))?;
 
-    Ok(Node(record))
+    debug!("created record: {:?}", record);
+    Ok(record)
 }
 
 pub fn update_burner(input: UpdateBurnerInput) -> ExternResult<Record> {
-    debug!("{:?}", input);
-    let record = crate::get_burner(input.original_header_hash)?.ok_or(wasm_error!(
+    let record = crate::get_burner(input.original_action_hash)?.ok_or(wasm_error!(
         WasmErrorInner::Guest("Burner doesn't exist".into(),)
     ))?;
-    debug!("{:?}", record);
     let action_hash = update_entry(record.action_address().clone(), &input.updated_burner)?;
 
     let path = prefix_path(input.updated_burner.name.clone())?;
@@ -48,6 +50,7 @@ pub fn update_burner(input: UpdateBurnerInput) -> ExternResult<Record> {
     let record = get(action_hash, GetOptions::default())?
         .ok_or(wasm_error!(WasmErrorInner::Guest("Unreachable".into())))?;
 
+    debug!("updated record: {:?}", record);
     Ok(record)
 }
 
@@ -55,8 +58,19 @@ pub fn delete_burner(_header_hash: String) -> ExternResult<Option<String>> {
     unimplemented!()
 }
 
-pub fn get_burner(_entry_hash: String) -> ExternResult<Option<Record>> {
-    unimplemented!()
+pub fn get_burner(entry_hash: ActionHash) -> ExternResult<Option<Record>> {
+    let agent_address = agent_info()?.agent_initial_pubkey.clone();
+    let links = get_links(agent_address, LinkTypes::AgentToBurner, None)?;
+    debug!("AgentToBurner links: {:?}", links);
+
+    if links.len() == 0 {
+        return Ok(None);
+    }
+
+    let record = get_latest(ActionHash::from(entry_hash))?;
+    debug!("Latest Record from entry_hash: {:?}", record);
+
+    Ok(Some(record))
 }
 
 pub fn get_all_burners() -> ExternResult<Vec<Record>> {
