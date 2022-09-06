@@ -19,21 +19,21 @@ pub fn update_burner(input: UpdateBurnerInput) -> ExternResult<Record> {
 
 /// Deletes a specific burner, returning.
 #[hdk_extern]
-pub fn delete_burner(header_hash: String) -> ExternResult<Option<String>> {
-    let burner_deletion = handlers::delete_burner(header_hash)?;
+pub fn delete_burner(original_hash: ActionHash) -> ExternResult<Option<ActionHash>> {
+    let burner_deletion = handlers::delete_burner(original_hash)?;
     Ok(burner_deletion)
 }
 
 /// Returns a specific burner, if it exists.
 #[hdk_extern]
-pub fn get_burner(entry_hash: ActionHash) -> ExternResult<Option<Record>> {
-    let burner = handlers::get_burner(entry_hash)?;
+pub fn get_my_burner(original_hash: ActionHash) -> ExternResult<Option<Record>> {
+    let burner = handlers::get_my_burner(original_hash)?;
     Ok(burner) // Ok boomer...
 }
 
 /// Returns the burners for the given agent.
 #[hdk_extern]
-pub fn get_all_burners(_: ()) -> ExternResult<Vec<Record>> {
-    let burners = handlers::get_all_burners()?;
+pub fn get_my_burners(_: ()) -> ExternResult<Vec<Record>> {
+    let burners = handlers::get_my_burners()?;
     Ok(burners)
 }

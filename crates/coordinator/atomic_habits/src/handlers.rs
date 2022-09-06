@@ -38,8 +38,8 @@ pub fn create_burner(burner: Burner) -> ExternResult<Record> {
 }
 
 pub fn update_burner(input: UpdateBurnerInput) -> ExternResult<Record> {
-    let record = crate::get_burner(input.original_action_hash)?.ok_or(wasm_error!(
-        WasmErrorInner::Guest("Burner doesn't exist".into(),)
+    let record = crate::get_my_burner(input.original_action_hash)?.ok_or(wasm_error!(
+        WasmErrorInner::Guest("Burner doesn't exist or isn't owned by you".into(),)
     ))?;
     let action_hash = update_entry(record.action_address().clone(), &input.updated_burner)?;
 
@@ -54,26 +54,59 @@ pub fn update_burner(input: UpdateBurnerInput) -> ExternResult<Record> {
     Ok(record)
 }
 
-pub fn delete_burner(_header_hash: String) -> ExternResult<Option<String>> {
+pub fn delete_burner(_original_action_hash: ActionHash) -> ExternResult<Option<ActionHash>> {
     unimplemented!()
 }
 
-pub fn get_burner(entry_hash: ActionHash) -> ExternResult<Option<Record>> {
+pub fn get_my_burner(original_action_hash: ActionHash) -> ExternResult<Option<Record>> {
     let agent_address = agent_info()?.agent_initial_pubkey.clone();
     let links = get_links(agent_address, LinkTypes::AgentToBurner, None)?;
-    debug!("AgentToBurner links: {:?}", links);
+    // debug!("AgentToBurner links: {:?}", links);
 
     if links.len() == 0 {
         return Ok(None);
     }
 
-    let record = get_latest(ActionHash::from(entry_hash))?;
-    debug!("Latest Record from entry_hash: {:?}", record);
+    let filtered_links = links
+        .into_iter()
+        .filter(|link| {
+            link.target.to_owned() == AnyLinkableHash::from(original_action_hash.to_owned())
+        })
+        .map(|link| get_latest(link.target.into()))
+        .collect::<ExternResult<Vec<Record>>>()?;
+    // debug!("Filtered links: {:?}", filtered_links);
+    if filtered_links.len() == 0 {
+        return Ok(None);
+    }
 
-    Ok(Some(record))
+    debug!("fetched record: {:?}", filtered_links[0].clone());
+    Ok(Some(filtered_links[0].clone()))
 }
 
-pub fn get_all_burners() -> ExternResult<Vec<Record>> {
+pub fn get_my_burners() -> ExternResult<Vec<Record>> {
+    let agent_address = agent_info()?.agent_initial_pubkey.clone();
+
+    let get_links_input: GetLinksInput = GetLinksInput::new(
+        AnyLinkableHash::from(agent_address.clone()),
+        LinkTypes::AgentToBurner.try_into_filter()?,
+        None,
+    );
+
+    let links = HDK
+        .with(|h| h.borrow().get_links(vec![get_links_input]))?
+        .into_iter()
+        .flatten()
+        .collect::<Vec<Link>>();
+
+    let burners = links
+        .into_iter()
+        .map(|link| get_latest(link.target.into()))
+        .collect::<ExternResult<Vec<Record>>>()?;
+
+    Ok(burners)
+}
+
+pub fn _get_burners() -> ExternResult<Vec<Record>> {
     let path = Path::from("all_burners").typed(LinkTypes::PrefixPath)?;
 
     let children = path.children_paths()?;
