@@ -33,7 +33,7 @@ pub fn create_burner(burner: Burner) -> ExternResult<Record> {
     let record = get(action_hash, GetOptions::default())?
         .ok_or(wasm_error!(WasmErrorInner::Guest("Unreachable".into())))?;
 
-    debug!("created record: {:?}", record);
+    debug!("created record: {:#?}", record);
     Ok(record)
 }
 
@@ -47,40 +47,75 @@ pub fn update_burner(input: UpdateBurnerInput) -> ExternResult<Record> {
 
     path.ensure()?;
 
+    create_link(
+        path.path_entry_hash()?,
+        action_hash.clone(),
+        LinkTypes::PathToBurner,
+        input.updated_burner.name.as_bytes().to_vec(),
+    )?;
+
+    let agent_address = agent_info()?.agent_initial_pubkey.clone();
+    create_link(
+        agent_address,
+        action_hash.clone(),
+        LinkTypes::AgentToBurner,
+        (),
+    )?;
+
     let record = get(action_hash, GetOptions::default())?
         .ok_or(wasm_error!(WasmErrorInner::Guest("Unreachable".into())))?;
 
-    debug!("updated record: {:?}", record);
+    debug!("updated record: {:#?}", record);
     Ok(record)
 }
 
-pub fn delete_burner(_original_action_hash: ActionHash) -> ExternResult<Option<ActionHash>> {
-    unimplemented!()
+pub fn delete_my_burner(original_action_hash: ActionHash) -> ExternResult<Option<ActionHash>> {
+    crate::get_my_burner(original_action_hash.clone())?.ok_or(wasm_error!(
+        WasmErrorInner::Guest("Burner doesn't exist or isn't owned by you".into(),)
+    ))?;
+
+    let input = DeleteInput {
+        deletes_action_hash: original_action_hash,
+        chain_top_ordering: ChainTopOrdering::Strict,
+    };
+
+    let action_hash = delete_entry(input)?;
+
+    debug!("delete response: {:#?}", action_hash);
+    Ok(Some(action_hash))
 }
 
 pub fn get_my_burner(original_action_hash: ActionHash) -> ExternResult<Option<Record>> {
     let agent_address = agent_info()?.agent_initial_pubkey.clone();
     let links = get_links(agent_address, LinkTypes::AgentToBurner, None)?;
-    // debug!("AgentToBurner links: {:?}", links);
+    debug!("---- LINKS ---- {:#?}", links);
+
+    // debug!("Getting the Action Hash Details******************************:");
+    // let details = get_details(original_action_hash.clone(), GetOptions::latest())?.ok_or(
+    //     wasm_error!(WasmErrorInner::Guest("Burner not found".into())),
+    // )?;
+
+    // debug!("{:?}", details);
+    // debug!("Returned the Action Hash Details******************************:");
 
     if links.len() == 0 {
         return Ok(None);
     }
 
-    let filtered_links = links
+    let my_latest_burners = links
         .into_iter()
         .filter(|link| {
             link.target.to_owned() == AnyLinkableHash::from(original_action_hash.to_owned())
         })
         .map(|link| get_latest(link.target.into()))
         .collect::<ExternResult<Vec<Record>>>()?;
-    // debug!("Filtered links: {:?}", filtered_links);
-    if filtered_links.len() == 0 {
+    debug!("---- FILTERED LINKS ---- {:#?}", my_latest_burners);
+    if my_latest_burners.len() == 0 {
         return Ok(None);
     }
 
-    debug!("fetched record: {:?}", filtered_links[0].clone());
-    Ok(Some(filtered_links[0].clone()))
+    debug!("fetched record: {:#?}", my_latest_burners[0].clone());
+    Ok(Some(my_latest_burners[0].clone()))
 }
 
 pub fn get_my_burners() -> ExternResult<Vec<Record>> {

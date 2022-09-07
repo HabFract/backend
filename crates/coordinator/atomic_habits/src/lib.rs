@@ -11,20 +11,21 @@ pub fn create_burner(burner: Burner) -> ExternResult<Record> {
     handlers::create_burner(burner)
 }
 
-/// Updates a specific burner.
+/// Updates a specific burner for an agent, if it exists for them.
 #[hdk_extern]
 pub fn update_burner(input: UpdateBurnerInput) -> ExternResult<Record> {
-    handlers::update_burner(input)
+    let updated_burner = handlers::update_burner(input)?;
+    Ok(updated_burner)
 }
 
-/// Deletes a specific burner, returning.
+/// Deletes a specific burner, returning the delete action hash.
 #[hdk_extern]
-pub fn delete_burner(original_hash: ActionHash) -> ExternResult<Option<ActionHash>> {
-    let burner_deletion = handlers::delete_burner(original_hash)?;
+pub fn delete_my_burner(original_hash: ActionHash) -> ExternResult<Option<ActionHash>> {
+    let burner_deletion = handlers::delete_my_burner(original_hash)?;
     Ok(burner_deletion)
 }
 
-/// Returns a specific burner, if it exists.
+/// Returns a specific burner for an agent, if it exists for them.
 #[hdk_extern]
 pub fn get_my_burner(original_hash: ActionHash) -> ExternResult<Option<Record>> {
     let burner = handlers::get_my_burner(original_hash)?;
