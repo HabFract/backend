@@ -1,4 +1,4 @@
-use hc_zome_atomic_habits_coordinator_types::UpdateBurnerInput;
+use hc_zome_atomic_habits_coordinator_types::{DeleteResponse, UpdateBurnerInput};
 use hc_zome_atomic_habits_integrity::*;
 use hc_zome_atomic_habits_integrity_types::*;
 use hdk::{
@@ -33,27 +33,31 @@ pub fn create_burner(burner: Burner) -> ExternResult<Record> {
     let record = get(action_hash, GetOptions::default())?
         .ok_or(wasm_error!(WasmErrorInner::Guest("Unreachable".into())))?;
 
-    debug!("created record: {:#?}", record);
+    debug!("_+_+_+_+_+_+_+_+_+_ Created record: {:#?}", record);
     Ok(record)
 }
 
 pub fn update_burner(input: UpdateBurnerInput) -> ExternResult<Record> {
-    let record = crate::get_my_burner(input.original_action_hash)?.ok_or(wasm_error!(
+    let record = crate::get_my_burner(input.original_action_hash.clone())?.ok_or(wasm_error!(
         WasmErrorInner::Guest("Burner doesn't exist or isn't owned by you".into(),)
     ))?;
     let action_hash = update_entry(record.action_address().clone(), &input.updated_burner)?;
 
     let path = prefix_path(input.updated_burner.name.clone())?;
-
     path.ensure()?;
 
-    create_link(
-        path.path_entry_hash()?,
-        action_hash.clone(),
-        LinkTypes::PathToBurner,
-        input.updated_burner.name.as_bytes().to_vec(),
-    )?;
+    // Delete agent link to stale header
+    let existing_links = my_burner_links()?.unwrap();
+    let link_to_delete = existing_links
+        .into_iter()
+        .filter(|link| {
+            link.target.clone() == AnyLinkableHash::from(input.original_action_hash.to_owned())
+        })
+        .map(|link| link.create_link_hash)
+        .collect::<Vec<ActionHash>>();
+    delete_link(link_to_delete[0].clone())?;
 
+    // Create agent link to updated header
     let agent_address = agent_info()?.agent_initial_pubkey.clone();
     create_link(
         agent_address,
@@ -62,42 +66,63 @@ pub fn update_burner(input: UpdateBurnerInput) -> ExternResult<Record> {
         (),
     )?;
 
+    // Create anchor link to updated header
+    create_link(
+        path.path_entry_hash()?,
+        action_hash.clone(),
+        LinkTypes::PathToBurner,
+        input.updated_burner.name.as_bytes().to_vec(),
+    )?;
+
     let record = get(action_hash, GetOptions::default())?
         .ok_or(wasm_error!(WasmErrorInner::Guest("Unreachable".into())))?;
 
-    debug!("updated record: {:#?}", record);
+    debug!("_+_+_+_+_+_+_+_+_+_ Updated record: {:#?}", record);
     Ok(record)
 }
 
-pub fn delete_my_burner(original_action_hash: ActionHash) -> ExternResult<Option<ActionHash>> {
+pub fn delete_my_burner(original_action_hash: ActionHash) -> ExternResult<Option<DeleteResponse>> {
     crate::get_my_burner(original_action_hash.clone())?.ok_or(wasm_error!(
         WasmErrorInner::Guest("Burner doesn't exist or isn't owned by you".into(),)
     ))?;
 
     let input = DeleteInput {
-        deletes_action_hash: original_action_hash,
+        deletes_action_hash: original_action_hash.clone(),
         chain_top_ordering: ChainTopOrdering::Strict,
     };
 
     let action_hash = delete_entry(input)?;
 
-    debug!("delete response: {:#?}", action_hash);
-    Ok(Some(action_hash))
+    let response = DeleteResponse {
+        delete_action_hash: action_hash,
+        original_action_hash,
+    };
+    debug!("_+_+_+_+_+_+_+_+_+_  Delete response: {:#?}", response);
+    Ok(Some(response))
+}
+
+pub fn get_my_burner_entry(original_entry_hash: AnyLinkableHash) -> ExternResult<Option<Entry>> {
+    let details = get_details(original_entry_hash, GetOptions::latest())?.ok_or(wasm_error!(
+        WasmErrorInner::Guest("Burner not found".into())
+    ))?;
+
+    let my_latest_burner_entry: Option<Entry> = match details {
+        Details::Record(_) => {
+            return Err(wasm_error!(WasmErrorInner::Guest(
+                "Malformed details".into()
+            )))
+        }
+        Details::Entry(entry_details) => match entry_details.updates.last() {
+            // TODO implement recursion
+            Some(_update) => Some(entry_details.entry),
+            None => Some(entry_details.entry),
+        },
+    };
+    Ok(my_latest_burner_entry)
 }
 
 pub fn get_my_burner(original_action_hash: ActionHash) -> ExternResult<Option<Record>> {
-    let agent_address = agent_info()?.agent_initial_pubkey.clone();
-    let links = get_links(agent_address, LinkTypes::AgentToBurner, None)?;
-    debug!("---- LINKS ---- {:#?}", links);
-
-    // debug!("Getting the Action Hash Details******************************:");
-    // let details = get_details(original_action_hash.clone(), GetOptions::latest())?.ok_or(
-    //     wasm_error!(WasmErrorInner::Guest("Burner not found".into())),
-    // )?;
-
-    // debug!("{:?}", details);
-    // debug!("Returned the Action Hash Details******************************:");
-
+    let links = my_burner_links()?.unwrap();
     if links.len() == 0 {
         return Ok(None);
     }
@@ -109,12 +134,15 @@ pub fn get_my_burner(original_action_hash: ActionHash) -> ExternResult<Option<Re
         })
         .map(|link| get_latest(link.target.into()))
         .collect::<ExternResult<Vec<Record>>>()?;
-    debug!("---- FILTERED LINKS ---- {:#?}", my_latest_burners);
+    // debug!("---- MY LATEST BURNERS ---- {:#?}", my_latest_burners);
     if my_latest_burners.len() == 0 {
         return Ok(None);
     }
 
-    debug!("fetched record: {:#?}", my_latest_burners[0].clone());
+    debug!(
+        "_+_+_+_+_+_+_+_+_+_ Fetched record: {:#?}",
+        my_latest_burners[0].clone()
+    );
     Ok(Some(my_latest_burners[0].clone()))
 }
 
@@ -172,6 +200,16 @@ pub fn _get_burners() -> ExternResult<Vec<Record>> {
 }
 
 /** Private helpers */
+
+fn my_burner_links() -> ExternResult<Option<Vec<Link>>> {
+    let agent_address = agent_info()?.agent_initial_pubkey.clone();
+    let links = get_links(agent_address, LinkTypes::AgentToBurner, None)?;
+    debug!("---- LINKS ---- {:#?}", links);
+    if links.len() == 0 {
+        return Ok(None);
+    }
+    Ok(Some(links))
+}
 
 fn prefix_path(name: String) -> ExternResult<TypedPath> {
     // convert to lowercase for path for ease of search

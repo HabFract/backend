@@ -7,3 +7,10 @@ pub struct UpdateBurnerInput {
     pub original_action_hash: ActionHash,
     pub updated_burner: Burner,
 }
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct DeleteResponse {
+    pub delete_action_hash: ActionHash,
+    pub original_action_hash: ActionHash,
+}

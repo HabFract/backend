@@ -2,7 +2,7 @@ use hdk::prelude::{holo_hash::ActionHash, *};
 
 mod handlers;
 
-use hc_zome_atomic_habits_coordinator_types::UpdateBurnerInput;
+use hc_zome_atomic_habits_coordinator_types::{DeleteResponse, UpdateBurnerInput};
 use hc_zome_atomic_habits_integrity_types::*;
 
 /// Creates a burner for the agent executing this call.
@@ -20,7 +20,7 @@ pub fn update_burner(input: UpdateBurnerInput) -> ExternResult<Record> {
 
 /// Deletes a specific burner, returning the delete action hash.
 #[hdk_extern]
-pub fn delete_my_burner(original_hash: ActionHash) -> ExternResult<Option<ActionHash>> {
+pub fn delete_my_burner(original_hash: ActionHash) -> ExternResult<Option<DeleteResponse>> {
     let burner_deletion = handlers::delete_my_burner(original_hash)?;
     Ok(burner_deletion)
 }
@@ -29,6 +29,12 @@ pub fn delete_my_burner(original_hash: ActionHash) -> ExternResult<Option<Action
 #[hdk_extern]
 pub fn get_my_burner(original_hash: ActionHash) -> ExternResult<Option<Record>> {
     let burner = handlers::get_my_burner(original_hash)?;
+    Ok(burner) // Ok boomer...
+}
+/// Returns a live burner from an entry hash for an agent, if it exists for them.
+#[hdk_extern]
+pub fn get_my_live_burner(entry_hash: AnyLinkableHash) -> ExternResult<Option<Entry>> {
+    let burner = handlers::get_my_burner_entry(entry_hash)?;
     Ok(burner) // Ok boomer...
 }
 
