@@ -166,11 +166,21 @@ pub fn get_my_live_burners() -> ExternResult<Vec<Record>> {
         })
         .collect::<Vec<Option<Record>>>();
 
+    // debug!(
+    //     "_+_+_+_+_+_+_+_+_+_ Fetched maybes: {:#?}",
+    //     maybe_entries.clone()
+    // );
     let entries = maybe_entries
         .into_iter()
         .filter(|x| x.is_some())
         .map(|x| x.unwrap())
         .collect::<Vec<Record>>();
+    // debug!(
+    //     "_+_+_+_+_+_+_+_+_+_ Fetched records: {:#?}",
+    //     entries.clone()
+    // );
+
+    // TODO: fix edge case where an entry is recreated with the same hash. (Avoid recreating, just find the delete and remove?)
     match entries.len() {
         0 => return Ok(Vec::<Record>::new()),
         _ => return Ok(entries),

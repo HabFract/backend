@@ -31,6 +31,7 @@ pub fn get_my_burner(original_hash: ActionHash) -> ExternResult<Option<Record>> 
     let burner = handlers::get_my_burner(original_hash)?;
     Ok(burner) // Ok boomer...
 }
+
 /// Returns a live burner from an entry hash for an agent, if it exists for them.
 #[hdk_extern]
 pub fn get_my_live_burner(entry_hash: AnyLinkableHash) -> ExternResult<Option<Entry>> {
