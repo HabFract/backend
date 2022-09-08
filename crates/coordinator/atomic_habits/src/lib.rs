@@ -40,7 +40,7 @@ pub fn get_my_live_burner(entry_hash: AnyLinkableHash) -> ExternResult<Option<En
 
 /// Returns the burners for the given agent.
 #[hdk_extern]
-pub fn get_my_burners(_: ()) -> ExternResult<Vec<Record>> {
-    let burners = handlers::get_my_burners()?;
+pub fn get_my_live_burners(_: ()) -> ExternResult<Vec<Record>> {
+    let burners = handlers::get_my_burner_entries()?;
     Ok(burners)
 }

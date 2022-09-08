@@ -146,7 +146,7 @@ pub fn get_my_burner(original_action_hash: ActionHash) -> ExternResult<Option<Re
     Ok(Some(my_latest_burners[0].clone()))
 }
 
-pub fn get_my_burners() -> ExternResult<Vec<Record>> {
+pub fn _get_all_my_burners() -> ExternResult<Vec<Record>> {
     let agent_address = agent_info()?.agent_initial_pubkey.clone();
 
     let get_links_input: GetLinksInput = GetLinksInput::new(
@@ -166,7 +166,67 @@ pub fn get_my_burners() -> ExternResult<Vec<Record>> {
         .map(|link| get_latest(link.target.into()))
         .collect::<ExternResult<Vec<Record>>>()?;
 
+    debug!(
+        "_+_+_+_+_+_+_+_+_+_ My Latest burners record: {:#?}",
+        burners.clone()
+    );
     Ok(burners)
+}
+
+pub fn get_my_burner_entries() -> ExternResult<Vec<Record>> {
+    let agent_address = agent_info()?.agent_initial_pubkey.clone();
+
+    let get_links_input: GetLinksInput = GetLinksInput::new(
+        AnyLinkableHash::from(agent_address.clone()),
+        LinkTypes::AgentToBurner.try_into_filter()?,
+        None,
+    );
+
+    let links = HDK
+        .with(|h| h.borrow().get_links(vec![get_links_input]))?
+        .into_iter()
+        .flatten()
+        .collect::<Vec<Link>>();
+
+    let maybe_entries = links
+        .clone()
+        .into_iter()
+        .map(|link| get_latest(link.target.into()))
+        .map(|latest_record| {
+            let entry = latest_record
+                .map(|record| {
+                    let entry_hash = record
+                        .signed_action
+                        .hashed
+                        .content
+                        .entry_hash()
+                        .map(|eh| eh.to_owned());
+                    entry_hash
+                })
+                .expect("Only valid records mapped ");
+
+            // Return an option for a live entry
+            get(
+                entry.unwrap(),
+                GetOptions {
+                    strategy: GetStrategy::Latest,
+                },
+            )
+            .unwrap()
+        })
+        .collect::<Vec<Option<Record>>>();
+
+    // debug!("---- maybe_entries ---- {:#?}", maybe_entries.clone());
+    let entries = maybe_entries
+        .into_iter()
+        .filter(|x| x.is_some())
+        .map(|x| x.unwrap())
+        .collect::<Vec<Record>>();
+    // debug!("---- ENTRIES ---- {:#?}", entries.clone());
+    match entries.len() {
+        0 => return Ok(Vec::<Record>::new()),
+        _ => return Ok(entries),
+    }
 }
 
 pub fn _get_burners() -> ExternResult<Vec<Record>> {
